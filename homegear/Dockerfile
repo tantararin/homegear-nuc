@@ -20,36 +20,10 @@ ENV architecture=${BUILD_ARCH}
 COPY script/installNightly.sh /installNightly.sh
 RUN \
     touch /tmp/HOMEGEAR_STATIC_INSTALLATION; \
-    curl https://apt.homegear.eu/Release.key | apt-key add - ; \
-
-    echo 'deb https://apt.homegear.eu/Debian/ buster/' > /etc/apt/sources.list.d/homegear.list; \ 
-
-# Update package information
-apt update; \
-
-# Install Homegear with all modules
-apt install \
-homegear \
-homegear-management \
-homegear-nodes-core \
-homegear-nodes-extra \
-homegear-homematicbidcos \
-homegear-homematicwired \
-homegear-insteon \
-homegear-max \
-homegear-philipshue \
-homegear-sonos \
-homegear-kodi \
-homegear-ipcam \
-homegear-beckhoff \
-homegear-knx \
-homegear-enocean \
-homegear-intertechno \
-homegear-nanoleaf \
-homegear-ccu \
-homegear-mbus \
-homegear-influxdb; \    
-    
+    wget https://homegear.eu/packages/Release.key && apt-key add Release.key && rm Release.key; \
+    echo 'deb https://homegear.eu/packages/Debian/ buster/' >> /etc/apt/sources.list.d/homegear.list; \
+    chmod +x /installNightly.sh; \
+    /installNightly.sh; \
     rm -f /etc/homegear/dh1024.pem; \
     rm -f /etc/homegear/homegear.crt; \
     rm -f /etc/homegear/homegear.key; \
