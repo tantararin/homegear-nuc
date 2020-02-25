@@ -28,22 +28,32 @@ RUN \
     homegear-ui \
     homegear-nodes-core \
     homegear-nodes-extra \
-#    homegear-homematicbidcos \
-#    homegear-homematicwired \
-#    homegear-insteon \
     homegear-max \
-#    homegear-philipshue \
-#    homegear-sonos \
-#    homegear-kodi \
-#    homegear-ipcam \
-#    homegear-beckhoff \
-#    homegear-knx \
-#    homegear-enocean \
-#    homegear-intertechno \
-#    homegear-zwave \
     homegear-mbus \
     homegear-ccu2 \
     homegear-influxdb; \
+    apt-get -y install \
+    homegear-homematicbidcos \
+    homegear-homematicwired \
+    homegear-insteon \
+    homegear-max \
+    homegear-philipshue \
+    homegear-sonos \
+    homegear-ipcam \
+    homegear-kodi \
+    homegear-beckhoff \
+    homegear-knx \
+    homegear-enocean \
+    homegear-intertechno \
+    homegear-nanoleaf \
+    homegear-ccu \
+    homegear-mbus \
+    homegear-velux-klf200 \
+    homegaer-zwave \
+    homegear-zigbee \
+    homegear-influxdb \
+    homegear-management \
+    homegear-webssh; \
     rm -f /etc/homegear/dh1024.pem; \
     rm -f /etc/homegear/homegear.crt; \
     rm -f /etc/homegear/homegear.key; \
