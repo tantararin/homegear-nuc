@@ -19,7 +19,7 @@ RUN \
 RUN \
     touch /tmp/HOMEGEAR_STATIC_INSTALLATION; \
     wget https://apt.homegear.eu/Release.key && apt-key add Release.key && rm Release.key; \
-    echo 'deb https://apt.homegear.eu/Debian/ buster/' >> /etc/apt/sources.list.d/homegear.list; \
+    echo 'deb https://apt.homegear.eu/Debian/ stretch/' >> /etc/apt/sources.list.d/homegear.list; \
     apt-get update && apt-get -y install \
     homegear \
     homegear-management \
