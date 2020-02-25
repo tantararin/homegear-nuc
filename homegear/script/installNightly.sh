@@ -8,7 +8,7 @@ SCRIPTDIR="$( cd "$(dirname $0)" && pwd )"
 
 apt-get update
 sys="debian"
-codename="stretch"
+codename="buster"
 system="${sys}_${codename}"
 arch=$(dpkg --print-architecture)
 
