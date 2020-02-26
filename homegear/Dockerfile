@@ -1,27 +1,11 @@
-# Taken from https://github.com/Homegear/Homegear-Docker/blob/master/rpi-stable/Dockerfile
-ARG BUILD_FROM
-ARG BUILD_ARCH
-
-FROM $BUILD_FROM
-MAINTAINER Kreativmonkey <kreativmonkey@calyrium.org>
-
-
-RUN \
-    apt-get update && apt-get -y install \
-    apt-transport-https \
-    wget ca-certificates \
-    apt-utils \
-    gnupg \
-    libzip4 \
-    libavahi-client3 \
-    libavahi-client-dev \
-    insserv
-ENV architecture=${BUILD_ARCH}
+FROM debian:buster-slim
+MAINTAINER Dr. Sathya Laufer <sathya@homegear.email>
+RUN apt-get update && apt-get -y install apt-transport-https apt-utils wget ca-certificates gnupg libzip4 libavahi-client3 libavahi-client-dev insserv
 COPY script/installNightly.sh /installNightly.sh
 RUN \
     touch /tmp/HOMEGEAR_STATIC_INSTALLATION; \
-    wget https://homegear.eu/packages/Release.key && apt-key add Release.key && rm Release.key; \
-    echo 'deb https://homegear.eu/packages/Debian/ buster/' >> /etc/apt/sources.list.d/homegear.list; \
+    wget https://apt.homegear.eu/Release.key && apt-key add Release.key && rm Release.key; \
+    echo 'deb https://apt.homegear.eu/Debian/ buster/' >> /etc/apt/sources.list.d/homegear.list; \
     chmod +x /installNightly.sh; \
     /installNightly.sh; \
     rm -f /etc/homegear/dh1024.pem; \
@@ -30,6 +14,8 @@ RUN \
     cp -R /etc/homegear /etc/homegear.config; \
     cp -R /var/lib/homegear /var/lib/homegear.data; \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+VOLUME ["/etc/homegear", "/var/lib/homegear", "/var/log/homegear"]
 
 COPY script/run.sh /run.sh
 RUN chmod +x /run.sh
