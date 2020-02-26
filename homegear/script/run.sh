@@ -1,13 +1,22 @@
 #/bin/bash
 
-# Inspired by https://github.com/Homegear/Homegear-Docker/blob/master/rpi-stable/start.sh
 _term() {
-	service homegear-influxdb stop
-	service homegear stop
-	exit $?
+	HOMEGEAR_PID=$(cat /var/run/homegear/homegear.pid)
+	kill $(cat /var/run/homegear/homegear-management.pid)
+	kill $(cat /var/run/homegear/homegear-webssh.pid)
+	kill $(cat /var/run/homegear/homegear-influxdb.pid)
+	kill $HOMEGEAR_PID
+	wait "$HOMEGEAR_PID"
+	/etc/homegear/homegear-stop.sh
+	exit 0
 }
 
 trap _term SIGTERM
+
+if [[ $GET_VERSION -eq 1 ]]; then
+	homegear -v
+	exit $?
+fi
 
 USER=homegear
 
@@ -17,8 +26,10 @@ USER_GID=$(id -g $USER)
 USER_ID=${HOST_USER_ID:=$USER_ID}
 USER_GID=${HOST_USER_GID:=$USER_GID}
 
-sed -i -e "s/^${USER}:\([^:]*\):[0-9]*:[0-9]*/${USER}:\1:${USER_ID}:${USER_GID}/"  /etc/passwd
-sed -i -e "s/^${USER}:\([^:]*\):[0-9]*/${USER}:\1:${USER_GID}/" /etc/group
+if [ $USER_ID -ne 0 ]; then
+	sed -i -e "s/^${USER}:\([^:]*\):[0-9]*:[0-9]*/${USER}:\1:${USER_ID}:${USER_GID}/" /etc/passwd
+	sed -i -e "s/^${USER}:\([^:]*\):[0-9]*/${USER}:\1:${USER_GID}/" /etc/group
+fi
 
 mkdir -p /config/homegear /share/homegear/lib /share/homegear/log
 chown $USER:$USER /config/homegear /share/homegear/lib /share/homegear/log
@@ -27,8 +38,10 @@ ln -nfs /config/homegear     /etc/homegear
 ln -nfs /share/homegear/lib /var/lib/homegear
 ln -nfs /share/homegear/log /var/log/homegear
 
+
+
 if ! [ "$(ls -A /etc/homegear)" ]; then
-	cp -R /etc/homegear.config/* /etc/homegear/
+	cp -a /etc/homegear.config/* /etc/homegear/
 fi
 
 if ! [ "$(ls -A /var/lib/homegear)" ]; then
@@ -36,12 +49,22 @@ if ! [ "$(ls -A /var/lib/homegear)" ]; then
 else
 	rm -Rf /var/lib/homegear/modules/*
 	rm -Rf /var/lib/homegear/flows/nodes/*
+	mkdir -p /var/lib/homegear.data/modules
 	cp -a /var/lib/homegear.data/modules/* /var/lib/homegear/modules/
-	cp -a /var/lib/homegear.data/flows/nodes/* /var/lib/homegear/flows/nodes/
+	[ $? -ne 0 ] && echo "Could not copy modules to \"homegear.data/modules/\". Please check the permissions on this directory and make sure it is writeable."
+	mkdir -p /var/lib/homegear.data/node-blue/nodes
+	cp -a /var/lib/homegear.data/node-blue/nodes/* /var/lib/homegear/node-blue/nodes/
+	[ $? -ne 0 ] && echo "Could not copy nodes to \"homegear.data/node-blue/nodes\". Please check the permissions on this directory and make sure it is writeable."
 fi
+rm -f /var/lib/homegear/homegear_updated
 
 if ! [ -f /var/log/homegear/homegear.log ]; then
 	touch /var/log/homegear/homegear.log
+	touch /var/log/homegear/homegear-webssh.log
+	touch /var/log/homegear/homegear-flows.log
+	touch /var/log/homegear/homegear-scriptengine.log
+	touch /var/log/homegear/homegear-management.log
+	touch /var/log/homegear/homegear-influxdb.log
 fi
 
 if ! [ -f /etc/homegear/dh1024.pem ]; then
@@ -49,27 +72,39 @@ if ! [ -f /etc/homegear/dh1024.pem ]; then
 	openssl req -batch -new -key /etc/homegear/homegear.key -out /etc/homegear/homegear.csr
 	openssl x509 -req -in /etc/homegear/homegear.csr -signkey /etc/homegear/homegear.key -out /etc/homegear/homegear.crt
 	rm /etc/homegear/homegear.csr
-	chown homegear:homegear /etc/homegear/homegear.key
 	chmod 400 /etc/homegear/homegear.key
 	openssl dhparam -check -text -5 -out /etc/homegear/dh1024.pem 1024
-	chown homegear:homegear /etc/homegear/dh1024.pem
 	chmod 400 /etc/homegear/dh1024.pem
 fi
 
 chown -R root:root /etc/homegear
-find /etc/homegear/ -type d -exec chmod 755 {} \;
-chown -R homegear:homegear /var/log/homegear/ 
-chown -R homegear:homegear /var/lib/homegear/
-find /var/log/homegear/ -type d -exec chmod 750 {} \;
-find /var/log/homegear/ -type f -exec chmod 640 {} \;
-find /var/lib/homegear/ -type d -exec chmod 750 {} \;
-find /var/lib/homegear/ -type f -exec chmod 640 {} \;
+chown ${USER}:${USER} /etc/homegear/*.key
+chown ${USER}:${USER} /etc/homegear/*.pem
+chown ${USER}:${USER} /etc/homegear/ca/private/*.key
+find /etc/homegear -type d -exec chmod 755 {} \;
+chown -R ${USER}:${USER} /var/log/homegear /var/lib/homegear
+find /var/log/homegear -type d -exec chmod 750 {} \;
+find /var/log/homegear -type f -exec chmod 640 {} \;
+find /var/lib/homegear -type d -exec chmod 750 {} \;
+find /var/lib/homegear -type f -exec chmod 640 {} \;
+find /var/lib/homegear/scripts -type f -exec chmod 550 {} \;
 
 ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-service homegear start
-service homegear-management start
-service homegear-influxdb start
+mkdir -p /var/run/homegear
+chown ${USER}:${USER} /var/run/homegear
+
+/etc/homegear/homegear-start.sh
+/usr/bin/homegear -u ${USER} -g ${USER} -p /var/run/homegear/homegear.pid &
+sleep 5
+/usr/bin/homegear-management -p /var/run/homegear/homegear-management.pid &
+/usr/bin/homegear-webssh -u ${USER} -g ${USER} -p /var/run/homegear/homegear-webssh.pid &
+/usr/bin/homegear-influxdb -u ${USER} -g ${USER} -p /var/run/homegear/homegear-influxdb.pid &
+tail -f /var/log/homegear/homegear-webssh.log &
+tail -f /var/log/homegear/homegear-flows.log &
+tail -f /var/log/homegear/homegear-scriptengine.log &
+tail -f /var/log/homegear/homegear-management.log &
+tail -f /var/log/homegear/homegear-influxdb.log &
 tail -f /var/log/homegear/homegear.log &
 child=$!
 wait "$child"
