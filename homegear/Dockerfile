@@ -15,7 +15,7 @@ RUN \
     cp -R /var/lib/homegear /var/lib/homegear.data; \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-VOLUME ["/etc/homegear", "/var/lib/homegear", "/var/log/homegear"]
+#VOLUME ["/etc/homegear", "/var/lib/homegear", "/var/log/homegear"]
 
 COPY script/run.sh /run.sh
 RUN chmod +x /run.sh
