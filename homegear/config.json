@@ -7,8 +7,12 @@
   "startup": "services",
   "boot": "auto",
   "webui": "http://[HOST]:[PORT:2001]",
-  "auto_uart": true,
+  "auto_uart": false,
   "gpio": true,
+  "devices": [
+    "/dev/ttyAMA0:/dev/ttyAMA0:rwm",
+    "/dev/ttyACM0:/dev/ttyACM0:rwm"
+  ],
   "privileged": [
     "SYS_ADMIN",
     "SYS_RAWIO"
